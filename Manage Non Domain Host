@@ -1,0 +1,30 @@
+#this will allow you to enter PS sessions or connect to a HyperV host of a non domain joined machine
+
+$machineIPaddress = "13.70.108.150"
+$machineHostName = "azurehost01"
+
+#add entry to hosts file
+get-content -path "c:\windows\system32\drivers\etc\hosts"
+add-content -path "c:\windows\system32\drivers\etc\hosts" -value "$machineIPaddress $machineHostName"
+
+
+#set adapter connection to private
+Get-NetConnectionProfile
+Set-NetConnectionProfile -InterfaceAlias "ethernet" -NetworkCategory Private
+
+#enable powershell remoting
+Enable-PSRemoting
+
+Get-WSManCredSSP
+Enable-WSManCredSSP -role client -DelegateComputer "$machineHostName"
+
+#add to Tusted Hosts
+get-item -Path WSMan:\localhost\Client\TrustedHosts
+set-item -Path WSMan:\localhost\client\TrustedHosts -value "$machineHostName"
+
+#add creds 
+cmdkey /list
+cmdkey /add:azurehost01 /user:ladmin /pass:Longsharpsword1
+
+#test connection
+Enter-PSSession -ComputerName azurehost01
