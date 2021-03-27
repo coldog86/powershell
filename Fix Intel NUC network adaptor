@@ -1,0 +1,42 @@
+#Verify vendor id for network controllers.
+Get-WMIObject win32_PNPEntity |select name,deviceid |where {$_.Name -match "Ethernet"}
+Get-WMIObject win32_PNPEntity |select name,deviceid |where {$_.Name -match "Network"}
+
+
+Get-ChildItem -Recurse  |group Path |select Name
+# List network drivers available for vendor id’s  found for the above ID.  
+# Go to folder where 'LAN_WIN10_64_23.2' is extracted 
+cd E:\'Fix Network Adaptor'
+Get-ChildItem -Recurse |Select-String -Pattern "15be" |group Path |select Name
+
+
+# For Windows Server 2016 installation and we will use e1d65x64.inf file located in NDIS65 folder. Open inf file in notepad and find vendor id in section 
+# E:\Fix Network Adaptor\PRO1000\Winx64\NDIS65\e1d65x64.inf
+
+# Open inf file in notepad and find vendor id in section 
+notepad E:\Fix Network Adaptor\PRO1000\Winx64\NDIS65\e1d65x64.inf
+
+<# 
+Paste copied text at the end of section [Intel.NTamd64.10.0] 
+%E15BENC.DeviceDesc%            = E15BE.10.0.1,       PCI\VEN_8086&DEV_15BE
+%E15BENC.DeviceDesc%            = E15BE.10.0.1,       PCI\VEN_8086&DEV_15BE&SUBSYS_00008086
+#> 
+
+# Disable driver signature verification. In the powershell window type the following commands:
+bcdedit /set LOADOPTIONS DISABLE_INTEGRITY_CHECKS
+bcdedit /set TESTSIGNING ON
+bcdedit /set NOINTEGRITYCHECKS ON
+
+# Restart server
+Restart-Computer
+
+# run the following commands after restart
+pnputil.exe -i -a 'E:\Fix Network Adaptor\PRO1000\Winx64\NDIS65\e1d65x64.inf'
+
+Get-NetAdapter
+
+bcdedit /set LOADOPTIONS ENABLE_INTEGRITY_CHECKS
+bcdedit /set TESTSIGNING OFF
+bcdedit /set NOINTEGRITYCHECKS OFF
+
+ 
